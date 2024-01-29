@@ -7,7 +7,8 @@ type History struct {
 
 func NewBufferHistory() History {
 	return History{
-		buffers: make([]Buffer, 1000),
+		buffers: []Buffer{NewBuffer()},
+		index:   0,
 	}
 }
 

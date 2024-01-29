@@ -1,5 +1,13 @@
 package main
 
+type LineClear int
+
+const (
+	CURSOR_FORWARD   LineClear = 0
+	CURSOR_BACKWARDS LineClear = 1
+	FULL_LINE        LineClear = 2
+)
+
 type WindowSize struct {
 	width  int
 	height int
@@ -7,6 +15,10 @@ type WindowSize struct {
 
 type Window interface {
 	GetWindowSize() WindowSize
-	SetCursorPosition(x int, y int)
+	ClearLine(LineClear)
+	MoveCursor(x int)
+	SetCursorColumn(x int)
+	SaveCursor()
+	RestoreCursor()
 	Write([]byte) (int, error)
 }
