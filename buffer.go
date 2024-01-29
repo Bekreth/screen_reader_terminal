@@ -72,6 +72,11 @@ func (buffer Buffer) Output() (string, int) {
 	return buffer.currentValue, buffer.cursorPosition
 }
 
+func (buffer *Buffer) Clear() {
+	buffer.cursorPosition = 0
+	buffer.currentValue = ""
+}
+
 func indiciesOfChar(input string, char rune) []int {
 	output := make([]int, 0)
 	for i, c := range input {
