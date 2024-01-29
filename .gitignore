@@ -1,0 +1,8 @@
+jane_cli
+
+*.swp
+*.swo
+
+output/
+var/
+temp/
