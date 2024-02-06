@@ -40,7 +40,15 @@ func TestModAdd(t *testing.T) {
 			expectedRollover: 1,
 		},
 		{
-			description:      "Add one negative value",
+			description:      "Add one negative value without rollover",
+			inputValue:       -10,
+			inputAccumulator: 16,
+			inputBase:        25,
+			expectedOutput:   6,
+			expectedRollover: 0,
+		},
+		{
+			description:      "Add one negative value with rollover",
 			inputValue:       -10,
 			inputAccumulator: 0,
 			inputBase:        25,
