@@ -37,11 +37,16 @@ func (window unixWindow) ClearLine(lineClear LineClear) {
 	window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, lineClear, "K")))
 }
 
-func (window unixWindow) MoveCursor(x int) {
+func (window unixWindow) MoveCursor(x int, y int) {
 	if x < 0 {
 		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, -1*x, "D")))
 	} else if x > 0 {
 		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, x, "C")))
+	}
+	if y < 0 {
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, -1*y, "A")))
+	} else if y > 0 {
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, y, "B")))
 	}
 }
 

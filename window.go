@@ -16,7 +16,7 @@ type WindowSize struct {
 type Window interface {
 	GetWindowSize() WindowSize
 	ClearLine(LineClear)
-	MoveCursor(x int)
+	MoveCursor(x int, y int)
 	SetCursorColumn(x int)
 	SaveCursor()
 	RestoreCursor()

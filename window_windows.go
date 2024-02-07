@@ -43,6 +43,11 @@ func (window windowsWindow) MoveCursor(x int) {
 	} else if x > 0 {
 		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, x, "C")))
 	}
+	if y < 0 {
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, -1*y, "A")))
+	} else if y > 0 {
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, y, "B")))
+	}
 }
 
 func (window windowsWindow) SetCursorColumn(x int) {

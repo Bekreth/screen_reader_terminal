@@ -1,6 +1,12 @@
 package main
 
-import "fmt"
+func IntFloor(a int, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
 
 // Adds 2 numbers (either positive or negative) and returns the mod and rollover count.
 func ModAdd(value int, accumulator int, base int) (int, int) {
@@ -27,7 +33,6 @@ func ModAdd(value int, accumulator int, base int) (int, int) {
 		rollover += accumulator / base
 		accumulator = accumulator % base
 	}
-	fmt.Println(rollover, value, accumulator)
 	sum := value + accumulator
 	rollover += sum / base
 	return sum % base, rollover

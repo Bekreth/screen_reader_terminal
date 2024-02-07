@@ -1,8 +1,10 @@
 package main
 
 type Buffer struct {
-	cursorPosition int
-	currentValue   string
+	cursorPosition   int
+	currentValue     string
+	previousPosition int
+	previousValue    string
 }
 
 func NewBuffer() Buffer {
@@ -38,7 +40,9 @@ func (buffer *Buffer) RemoveCharacter() {
 }
 
 func (buffer *Buffer) AdvanceCursor(amount int) {
-	buffer.cursorPosition += amount
+	if buffer.cursorPosition < len(buffer.currentValue) {
+		buffer.cursorPosition += amount
+	}
 }
 
 // Move the cursor forward by a word count, delineated by white space
@@ -53,7 +57,9 @@ func (buffer *Buffer) AdvanceCursorByWord(wordCount int) {
 }
 
 func (buffer *Buffer) RetreatCursor(amount int) {
-	buffer.cursorPosition -= amount
+	if buffer.cursorPosition > 0 {
+		buffer.cursorPosition -= amount
+	}
 }
 
 // Move the cursor backwards by a word count, delineated by white space
@@ -72,9 +78,21 @@ func (buffer Buffer) Output() (string, int) {
 	return buffer.currentValue, buffer.cursorPosition
 }
 
+func (buffer Buffer) PreviousOutput() (string, int) {
+	return buffer.previousValue, buffer.previousPosition
+}
+
+func (buffer *Buffer) UpdatePrevious() {
+	buffer.previousValue = buffer.currentValue
+	buffer.previousPosition = buffer.cursorPosition
+}
+
 func (buffer *Buffer) Clear() {
-	buffer.cursorPosition = 0
 	buffer.currentValue = ""
+	buffer.cursorPosition = 0
+
+	buffer.previousValue = ""
+	buffer.previousPosition = 0
 }
 
 func indiciesOfChar(input string, char rune) []int {
