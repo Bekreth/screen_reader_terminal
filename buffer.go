@@ -21,6 +21,14 @@ func NewBufferWithString(input string) Buffer {
 	}
 }
 
+// Adds a string to the cursor position
+func (buffer *Buffer) AddString(input string) {
+	buffer.currentValue = buffer.currentValue[0:buffer.cursorPosition] +
+		input +
+		buffer.currentValue[buffer.cursorPosition:]
+	buffer.cursorPosition += len(input)
+}
+
 // Adds a character to the current cursor position, advancing the cursor by 1
 func (buffer *Buffer) AddCharacter(character rune) {
 	buffer.currentValue = buffer.currentValue[0:buffer.cursorPosition] +

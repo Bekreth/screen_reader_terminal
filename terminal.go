@@ -17,6 +17,10 @@ func NewTerminal(window Window, buffer *Buffer, logger Logger) Terminal {
 	}
 }
 
+func (terminal Terminal) CurrentBuffer() *Buffer {
+	return terminal.buffer
+}
+
 func (terminal Terminal) Draw() {
 	lastData, lastCursor := terminal.buffer.PreviousOutput()
 	data, cursor := terminal.buffer.Output()
