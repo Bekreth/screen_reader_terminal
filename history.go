@@ -1,4 +1,4 @@
-package main
+package screen_reader_terminal
 
 type History struct {
 	buffers []Buffer

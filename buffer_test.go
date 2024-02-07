@@ -1,4 +1,4 @@
-package main
+package screen_reader_terminal
 
 import (
 	"testing"

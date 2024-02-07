@@ -1,6 +1,6 @@
 //go:build linux
 
-package main
+package screen_reader_terminal
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package main
+package screen_reader_terminal
 
 // Basic logging interface
 type Logger interface {

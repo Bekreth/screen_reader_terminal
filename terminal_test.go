@@ -1,4 +1,4 @@
-package main
+package screen_reader_terminal
 
 import (
 	"fmt"
@@ -34,20 +34,17 @@ func (l testLogger) Debugf(format string, args ...interface{}) {
 func TestDraw(t *testing.T) {
 	trials := []struct {
 		description    string
-		previousBuffer Buffer
 		buffer         Buffer
 		expectedOutput string
 	}{
 		{
 			description:    "Draw empty buffer",
-			previousBuffer: NewBuffer(),
 			buffer:         NewBuffer(),
 			expectedOutput: "",
 		},
 		{
-			description:    "Draw new buffer",
-			previousBuffer: NewBuffer(),
-			buffer:         NewBufferWithString("Hello world"),
+			description: "Draw new buffer",
+			buffer:      NewBufferWithString("Hello world"),
 			expectedOutput: fmt.Sprintf("%v%v%v%v",
 				fmt.Sprintf("%v%v", CSI, "s"),
 				"Hello world",
@@ -56,29 +53,43 @@ func TestDraw(t *testing.T) {
 			),
 		},
 		{
-			description:    "Add character to buffer end",
-			previousBuffer: NewBufferWithString("Hello worl"),
-			buffer:         NewBufferWithString("Hello world"),
-			expectedOutput: "d",
+			description: "Add character to buffer end",
+			buffer: Buffer{
+				currentValue:     "Hello world",
+				cursorPosition:   11,
+				previousValue:    "Hello worl",
+				previousPosition: 10,
+			},
+			expectedOutput: fmt.Sprintf("%v%v%v%v",
+				fmt.Sprintf("%v%v", CSI, "s"), // Save Cursor Position
+				"d",
+				fmt.Sprintf("%v%v", CSI, "u"),      // Load Cursor Position
+				fmt.Sprintf("%v%v%v", CSI, 1, "C"), // Move cursor right by 1
+			),
 		},
 		{
-			description:    "Remove character from buffer end",
-			previousBuffer: NewBufferWithString("Hello world"),
-			buffer:         NewBufferWithString("Hello worl"),
-			expectedOutput: fmt.Sprintf("%v%v",
+			description: "Remove character from buffer end",
+			buffer: Buffer{
+				currentValue:     "Hello worl",
+				cursorPosition:   10,
+				previousValue:    "Hello world",
+				previousPosition: 11,
+			},
+			expectedOutput: fmt.Sprintf("%v%v%v%v%v",
+				fmt.Sprintf("%v%v", CSI, "s"),                   // Save Cursor Position
 				fmt.Sprintf("%v%v%v", CSI, 1, "D"),              // Move cursor left by 1
 				fmt.Sprintf("%v%v%v", CSI, CURSOR_FORWARD, "K"), // Remove the text
+				fmt.Sprintf("%v%v", CSI, "u"),                   // Save Cursor Position
+				fmt.Sprintf("%v%v%v", CSI, 1, "D"),              // Move cursor left by 1
 			),
 		},
 		{
 			description: "Move cursor back 3",
-			previousBuffer: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 10,
-			},
 			buffer: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 7,
+				currentValue:     "Hello world",
+				cursorPosition:   7,
+				previousValue:    "Hello world",
+				previousPosition: 10,
 			},
 			expectedOutput: fmt.Sprintf("%v%v%v",
 				CSI, 3, "D", // Move cursor left by 3
@@ -86,19 +97,17 @@ func TestDraw(t *testing.T) {
 		},
 		{
 			description: "Insert text in middle of line",
-			previousBuffer: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 5,
-			},
 			buffer: Buffer{
-				currentValue:   "Hello, world",
-				cursorPosition: 6,
+				currentValue:     "Hello, world",
+				cursorPosition:   6,
+				previousValue:    "Hello world",
+				previousPosition: 5,
 			},
 			expectedOutput: fmt.Sprintf("%v%v%v%v",
-				fmt.Sprintf("%v%v%v", CSI, FULL_LINE, "K"), // Remove the text
-				fmt.Sprintf("%v%v%v", CSI, "0", "G"),       // Set Cursor position
-				"Hello, world",
-				fmt.Sprintf("%v%v%v", CSI, "7", "G"), // Set Cursor position
+				fmt.Sprintf("%v%v", CSI, "s"), // Save Cursor Position
+				", world",
+				fmt.Sprintf("%v%v", CSI, "u"),      // Load Cursor Position
+				fmt.Sprintf("%v%v%v", CSI, 1, "C"), // Move cursor right by 1
 			),
 		},
 	}
@@ -117,7 +126,6 @@ func TestDraw(t *testing.T) {
 			}
 			terminalUnderTest := NewTerminal(&window, &trial.buffer, testLogger{tt})
 			newHistory := NewBufferHistory()
-			newHistory.AddBuffer(trial.previousBuffer)
 			terminalUnderTest.history = &newHistory
 
 			terminalUnderTest.Draw()
