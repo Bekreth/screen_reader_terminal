@@ -9,16 +9,22 @@ const (
 )
 
 type WindowSize struct {
-	width  int
-	height int
+	Width  int
+	Height int
 }
 
 type Window interface {
 	GetWindowSize() WindowSize
 	ClearLine(LineClear)
+
 	MoveCursor(x int, y int)
 	SetCursorColumn(x int)
 	SaveCursor()
 	RestoreCursor()
+
+	// If int is positive, scrolls the page upwards by the amount shown, opposite
+	// for negative
+	ScrollPage(int)
+
 	Write([]byte) (int, error)
 }

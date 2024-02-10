@@ -20,10 +20,11 @@ type unixWindow struct {
 func NewWindow() Window {
 	// TODO handle error
 	terminalSize, _ := tsize.GetSize()
+	terminalSize.Width = 20
 	return unixWindow{
 		size: WindowSize{
-			width:  terminalSize.Width,
-			height: terminalSize.Height,
+			Width:  terminalSize.Width,
+			Height: terminalSize.Height,
 		},
 		file: os.Stdout,
 	}
@@ -64,4 +65,12 @@ func (window unixWindow) RestoreCursor() {
 
 func (window unixWindow) Write(input []byte) (int, error) {
 	return window.file.Write(input)
+}
+
+func (window unixWindow) ScrollPage(input int) {
+	if input > 0 {
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, input, "S")))
+	} else if input < 0 {
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, input, "T")))
+	}
 }

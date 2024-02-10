@@ -1,6 +1,14 @@
 package screen_reader_terminal
 
-func IntFloor(a int, b int) int {
+func IntMax(a int, b int) int {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func IntMin(a int, b int) int {
 	if a < b {
 		return a
 	} else {

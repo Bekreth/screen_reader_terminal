@@ -17,34 +17,34 @@ func TestAddCharacter(t *testing.T) {
 		{
 			description: "Empty string successful additions",
 			startingBuffer: Buffer{
-				cursorPosition: 0,
-				currentValue:   "",
+				currentPosition: 0,
+				currentValue:    "",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 4,
-				currentValue:   "abcd",
+				currentPosition: 4,
+				currentValue:    "abcd",
 			},
 		},
 		{
 			description: "Existing buffer successful additions",
 			startingBuffer: Buffer{
-				cursorPosition: 4,
-				currentValue:   "1234",
+				currentPosition: 4,
+				currentValue:    "1234",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 8,
-				currentValue:   "1234abcd",
+				currentPosition: 8,
+				currentValue:    "1234abcd",
 			},
 		},
 		{
 			description: "Existing buffer successful insertions",
 			startingBuffer: Buffer{
-				cursorPosition: 4,
-				currentValue:   "1234zxcv",
+				currentPosition: 4,
+				currentValue:    "1234zxcv",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 8,
-				currentValue:   "1234abcdzxcv",
+				currentPosition: 8,
+				currentValue:    "1234abcdzxcv",
 			},
 		},
 	}
@@ -69,45 +69,45 @@ func TestRemoveCharacter(t *testing.T) {
 		{
 			description: "Empty string, no change",
 			startingBuffer: Buffer{
-				cursorPosition: 0,
-				currentValue:   "",
+				currentPosition: 0,
+				currentValue:    "",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 0,
-				currentValue:   "",
+				currentPosition: 0,
+				currentValue:    "",
 			},
 		},
 		{
 			description: "Cursor at zero, no change",
 			startingBuffer: Buffer{
-				cursorPosition: 0,
-				currentValue:   "1234",
+				currentPosition: 0,
+				currentValue:    "1234",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 0,
-				currentValue:   "1234",
+				currentPosition: 0,
+				currentValue:    "1234",
 			},
 		},
 		{
 			description: "Cursor in middle, delete 4 character",
 			startingBuffer: Buffer{
-				cursorPosition: 8,
-				currentValue:   "1234abcdzxcv",
+				currentPosition: 8,
+				currentValue:    "1234abcdzxcv",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 4,
-				currentValue:   "1234zxcv",
+				currentPosition: 4,
+				currentValue:    "1234zxcv",
 			},
 		},
 		{
 			description: "Cursor at end, delete 4 characters",
 			startingBuffer: Buffer{
-				cursorPosition: 12,
-				currentValue:   "1234abcdzxcv",
+				currentPosition: 12,
+				currentValue:    "1234abcdzxcv",
 			},
 			expectedOutput: Buffer{
-				cursorPosition: 8,
-				currentValue:   "1234abcd",
+				currentPosition: 8,
+				currentValue:    "1234abcd",
 			},
 		},
 	}
@@ -146,8 +146,8 @@ func TestAdvanceCursorByWord(t *testing.T) {
 			description:  "Starting in the middle, go to end",
 			advanceCount: 1,
 			startingBuffer: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 5,
+				currentValue:    "Hello world",
+				currentPosition: 5,
 			},
 			expectedOutput: NewBufferWithString("Hello world"),
 		},
@@ -155,12 +155,12 @@ func TestAdvanceCursorByWord(t *testing.T) {
 			description:  "Starting in the middle, go to end next word",
 			advanceCount: 1,
 			startingBuffer: Buffer{
-				currentValue:   "Hello world, this is a test",
-				cursorPosition: 5,
+				currentValue:    "Hello world, this is a test",
+				currentPosition: 5,
 			},
 			expectedOutput: Buffer{
-				currentValue:   "Hello world, this is a test",
-				cursorPosition: 12,
+				currentValue:    "Hello world, this is a test",
+				currentPosition: 12,
 			},
 		},
 	}
@@ -192,36 +192,36 @@ func TestRetreatCursorByWord(t *testing.T) {
 			description:  "At beginning of string, do nothing",
 			advanceCount: 1,
 			startingBuffer: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 0,
+				currentValue:    "Hello world",
+				currentPosition: 0,
 			},
 			expectedOutput: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 0,
+				currentValue:    "Hello world",
+				currentPosition: 0,
 			},
 		},
 		{
 			description:  "Starting in the middle, beginning",
 			advanceCount: 1,
 			startingBuffer: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 5,
+				currentValue:    "Hello world",
+				currentPosition: 5,
 			},
 			expectedOutput: Buffer{
-				currentValue:   "Hello world",
-				cursorPosition: 0,
+				currentValue:    "Hello world",
+				currentPosition: 0,
 			},
 		},
 		{
 			description:  "Starting in the middle, go to end next word",
 			advanceCount: 1,
 			startingBuffer: Buffer{
-				currentValue:   "Hello world, this is a test",
-				cursorPosition: 10,
+				currentValue:    "Hello world, this is a test",
+				currentPosition: 10,
 			},
 			expectedOutput: Buffer{
-				currentValue:   "Hello world, this is a test",
-				cursorPosition: 5,
+				currentValue:    "Hello world, this is a test",
+				currentPosition: 5,
 			},
 		},
 	}
