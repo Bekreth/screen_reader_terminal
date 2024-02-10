@@ -1,4 +1,12 @@
-package screen_reader_terminal
+package buffer
+
+import "github.com/bekreth/screen_reader_terminal/utils"
+
+type BufferValues struct {
+	Prefix   string
+	Value    string
+	Position int
+}
 
 type Buffer struct {
 	prefix           string
@@ -28,9 +36,24 @@ func (buffer *Buffer) SetPrefix(input string) *Buffer {
 	return buffer
 }
 
-func (buffer *Buffer) SetString(input string) {
+func (buffer *Buffer) SetString(input string) *Buffer {
 	buffer.currentValue = input
 	buffer.currentPosition = len(input)
+	return buffer
+}
+
+func (buffer *Buffer) SetCurrentValues(input BufferValues) *Buffer {
+	buffer.prefix = input.Prefix
+	buffer.currentValue = input.Value
+	buffer.currentPosition = input.Position
+	return buffer
+}
+
+func (buffer *Buffer) SetPreviousValues(input BufferValues) *Buffer {
+	buffer.previousPrefix = input.Prefix
+	buffer.previousValue = input.Value
+	buffer.previousPosition = input.Position
+	return buffer
 }
 
 // Adds a string to the cursor position
@@ -67,7 +90,7 @@ func (buffer *Buffer) AdvanceCursor(amount int) {
 
 // Move the cursor forward by a word count, delineated by white space
 func (buffer *Buffer) AdvanceCursorByWord(wordCount int) {
-	indicies := append(indiciesOfChar(buffer.currentValue, ' '), len(buffer.currentValue))
+	indicies := append(utils.IndiciesOfChar(buffer.currentValue, ' '), len(buffer.currentValue))
 	for _, i := range indicies {
 		if i > buffer.currentPosition {
 			buffer.currentPosition = i
@@ -84,7 +107,7 @@ func (buffer *Buffer) RetreatCursor(amount int) {
 
 // Move the cursor backwards by a word count, delineated by white space
 func (buffer *Buffer) RetreatCursorByWord(wordCount int) {
-	indicies := indiciesOfChar(buffer.currentValue, ' ')
+	indicies := utils.IndiciesOfChar(buffer.currentValue, ' ')
 	possibleIndex := 0
 	for _, i := range indicies {
 		if i > possibleIndex && i < buffer.currentPosition {

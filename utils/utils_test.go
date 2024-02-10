@@ -1,4 +1,4 @@
-package screen_reader_terminal
+package utils
 
 import (
 	"testing"
@@ -40,7 +40,7 @@ func TestIndiciesOfChar(t *testing.T) {
 
 	for _, trial := range trials {
 		t.Run(trial.description, func(tt *testing.T) {
-			actualOutput := indiciesOfChar(trial.input, trial.seperator)
+			actualOutput := IndiciesOfChar(trial.input, trial.seperator)
 			assert.Equal(tt, trial.expectedOutput, actualOutput)
 		})
 	}
@@ -105,7 +105,7 @@ func TestZip(t *testing.T) {
 
 	for _, trial := range trials {
 		t.Run(trial.description, func(tt *testing.T) {
-			actualOutput := zip(trial.firstList, trial.secondList, func() int { return 0 })
+			actualOutput := Zip(trial.firstList, trial.secondList, func() int { return 0 })
 			assert.Equal(t, trial.expectedOutput, actualOutput)
 		})
 	}

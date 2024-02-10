@@ -1,6 +1,6 @@
-package screen_reader_terminal
+package utils
 
-func indiciesOfChar(input string, char rune) []int {
+func IndiciesOfChar(input string, char rune) []int {
 	output := make([]int, 0)
 	for i, c := range input {
 		if c == char {
@@ -15,7 +15,7 @@ type ZipResult[R any] struct {
 	Second R
 }
 
-func zip[R any](input1 []R, input2 []R, emptyMaker func() R) []ZipResult[R] {
+func Zip[R any](input1 []R, input2 []R, emptyMaker func() R) []ZipResult[R] {
 	i1Len := len(input1)
 	i2Len := len(input2)
 	max := IntMax(i1Len, i2Len)

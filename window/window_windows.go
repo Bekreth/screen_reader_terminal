@@ -1,6 +1,6 @@
 //go:build windows
 
-package screen_reader_terminal
+package window
 
 import (
 	"fmt"

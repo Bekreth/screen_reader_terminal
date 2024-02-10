@@ -1,18 +1,27 @@
-package screen_reader_terminal
+package terminal
 
 import (
 	"strings"
+
+	"github.com/bekreth/screen_reader_terminal/buffer"
+	"github.com/bekreth/screen_reader_terminal/history"
+	"github.com/bekreth/screen_reader_terminal/utils"
+	"github.com/bekreth/screen_reader_terminal/window"
 )
 
 type Terminal struct {
-	window  Window
-	buffer  *Buffer
-	history *History
-	logger  Logger
+	window  window.Window
+	buffer  *buffer.Buffer
+	history *history.History
+	logger  utils.Logger
 }
 
-func NewTerminal(window Window, buffer *Buffer, logger Logger) Terminal {
-	history := NewBufferHistory()
+func NewTerminal(
+	window window.Window,
+	buffer *buffer.Buffer,
+	logger utils.Logger,
+) Terminal {
+	history := history.NewBufferHistory()
 	return Terminal{
 		window:  window,
 		buffer:  buffer,
@@ -21,12 +30,12 @@ func NewTerminal(window Window, buffer *Buffer, logger Logger) Terminal {
 	}
 }
 
-func (terminal *Terminal) AddBuffer(buffer *Buffer) {
+func (terminal *Terminal) AddBuffer(buffer *buffer.Buffer) {
 	terminal.history.AddBuffer(*terminal.buffer)
 	terminal.buffer = buffer
 }
 
-func (terminal Terminal) CurrentBuffer() *Buffer {
+func (terminal Terminal) CurrentBuffer() *buffer.Buffer {
 	return terminal.buffer
 }
 
@@ -45,7 +54,7 @@ func (terminal Terminal) Draw() {
 		currentCursor,
 	)
 
-	zippedLines := zip(
+	zippedLines := utils.Zip(
 		splitPreviousData,
 		splitCurrentData,
 		func() string { return "" },
@@ -93,7 +102,7 @@ func lineDiff(
 	lastLineData string, lastCursor int,
 	lineData string, cursor int,
 ) string {
-	checkEdge := IntMin(lastCursor, cursor)
+	checkEdge := utils.IntMin(lastCursor, cursor)
 	newEnd := lineData[checkEdge:]
 	for i := 0; i <= checkEdge; i++ {
 		if lineData[0:i] != lastLineData[0:i] {
@@ -117,7 +126,7 @@ func (terminal Terminal) drawLine(
 
 	if currentCursor < previousCursor {
 		terminal.moveCursor(previousCursor, currentCursor)
-		terminal.window.ClearLine(CURSOR_FORWARD)
+		terminal.window.ClearLine(window.CURSOR_FORWARD)
 		terminal.window.Write([]byte(newEnd))
 		terminal.window.MoveCursor(-1*len(newEnd), 0)
 	} else {
@@ -136,17 +145,18 @@ func (terminal Terminal) drawLine(
 func (terminal Terminal) moveCursor(previousCursor int, currentCursor int) {
 	// TODO make this new line aware
 	windowWidth := terminal.window.GetWindowSize().Width
-	_, rollover := ModAdd(currentCursor, 0, windowWidth)
-	_, lastRollover := ModAdd(previousCursor, 0, windowWidth)
+	_, rollover := utils.ModAdd(currentCursor, 0, windowWidth)
+	_, lastRollover := utils.ModAdd(previousCursor, 0, windowWidth)
 	y := rollover - lastRollover
 	x := currentCursor - previousCursor + (-1 * y * windowWidth)
 	terminal.window.MoveCursor(x, y)
 }
 
 func (terminal Terminal) NewLine() {
+	currentValue, currentPosition := terminal.CurrentBuffer().Output()
 	terminal.moveCursor(
-		terminal.buffer.currentPosition,
-		len(terminal.buffer.currentValue),
+		currentPosition,
+		len(currentValue),
 	)
 	lineCount := terminal.CurrentBuffer().NewLineCount()
 	newLines := "\n"
@@ -166,7 +176,7 @@ func (terminal Terminal) determineRows(currentValue string, cursor int) (int, in
 	}
 	width := terminal.window.GetWindowSize().Width
 
-	newLineIndicies := append([]int{0}, indiciesOfChar(currentValue, '\n')...)
+	newLineIndicies := append([]int{0}, utils.IndiciesOfChar(currentValue, '\n')...)
 	splitValues := strings.Split(currentValue, "\n")
 
 	totalRowCount := 0

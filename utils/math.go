@@ -1,4 +1,4 @@
-package screen_reader_terminal
+package utils
 
 func IntMax(a int, b int) int {
 	if a > b {

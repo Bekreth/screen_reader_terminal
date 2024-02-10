@@ -1,4 +1,4 @@
-package screen_reader_terminal
+package buffer
 
 import (
 	"testing"

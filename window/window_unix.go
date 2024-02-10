@@ -1,6 +1,6 @@
 //go:build linux
 
-package screen_reader_terminal
+package window
 
 import (
 	"fmt"
@@ -28,6 +28,16 @@ func NewWindow() Window {
 		},
 		file: os.Stdout,
 	}
+}
+
+func (window unixWindow) SetWriter(writer io.Writer) Window {
+	window.file = writer
+	return window
+}
+
+func (window unixWindow) SetWindowSize(size WindowSize) Window {
+	window.size = size
+	return window
 }
 
 func (window unixWindow) GetWindowSize() WindowSize {

@@ -1,4 +1,6 @@
-package screen_reader_terminal
+package window
+
+import "io"
 
 type LineClear int
 
@@ -14,6 +16,9 @@ type WindowSize struct {
 }
 
 type Window interface {
+	SetWriter(writer io.Writer) Window
+	SetWindowSize(size WindowSize) Window
+
 	GetWindowSize() WindowSize
 	ClearLine(LineClear)
 
