@@ -20,7 +20,6 @@ type unixWindow struct {
 func NewWindow() Window {
 	// TODO handle error
 	terminalSize, _ := tsize.GetSize()
-	terminalSize.Width = 20
 	return unixWindow{
 		size: WindowSize{
 			Width:  terminalSize.Width,
@@ -48,6 +47,10 @@ func (window unixWindow) ClearLine(lineClear LineClear) {
 	window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, lineClear, "K")))
 }
 
+func (window unixWindow) ClearWindow(lineClear LineClear) {
+	window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, lineClear, "J")))
+}
+
 func (window unixWindow) MoveCursor(x int, y int) {
 	if x < 0 {
 		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, -1*x, "D")))
@@ -59,6 +62,10 @@ func (window unixWindow) MoveCursor(x int, y int) {
 	} else if y > 0 {
 		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, y, "B")))
 	}
+}
+
+func (window unixWindow) SetCursorPosition(x int, y int) {
+	window.file.Write([]byte(fmt.Sprintf("%v%v;%v%v", CSI, x, y, "H")))
 }
 
 func (window unixWindow) SetCursorColumn(x int) {

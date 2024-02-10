@@ -7,7 +7,7 @@ type LineClear int
 const (
 	CURSOR_FORWARD   LineClear = 0
 	CURSOR_BACKWARDS LineClear = 1
-	FULL_LINE        LineClear = 2
+	FULL             LineClear = 2
 )
 
 type WindowSize struct {
@@ -21,8 +21,10 @@ type Window interface {
 
 	GetWindowSize() WindowSize
 	ClearLine(LineClear)
+	ClearWindow(LineClear)
 
 	MoveCursor(x int, y int)
+	SetCursorPosition(x int, y int)
 	SetCursorColumn(x int)
 	SaveCursor()
 	RestoreCursor()

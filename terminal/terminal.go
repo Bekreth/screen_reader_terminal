@@ -17,14 +17,16 @@ type Terminal struct {
 }
 
 func NewTerminal(
-	window window.Window,
-	buffer *buffer.Buffer,
+	win window.Window,
+	buf *buffer.Buffer,
 	logger utils.Logger,
 ) Terminal {
 	history := history.NewBufferHistory()
+	win.ClearWindow(window.FULL)
+	win.SetCursorPosition(0, 0)
 	return Terminal{
-		window:  window,
-		buffer:  buffer,
+		window:  win,
+		buffer:  buf,
 		history: &history,
 		logger:  logger,
 	}
