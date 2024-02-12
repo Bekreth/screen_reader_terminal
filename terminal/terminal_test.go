@@ -126,6 +126,17 @@ func TestDraw(t *testing.T) {
 			),
 		},
 		{
+			description:      "Move cursor forward over new line",
+			currentValue:     "Hello\nworld",
+			currentPosition:  11,
+			previousValue:    "Hello\nworld",
+			previousPosition: 4,
+			expectedOutput: fmtLine(
+				right(1),
+				down(1),
+			),
+		},
+		{
 			description:      "Move cursor back over new line",
 			currentValue:     "Hello\nworld",
 			currentPosition:  4,
@@ -133,7 +144,7 @@ func TestDraw(t *testing.T) {
 			previousPosition: 11,
 			expectedOutput: fmtLine(
 				left(1),
-				fmtLine(window.CSI, 1, "B"), // Move cursor Up by 3
+				up(1),
 			),
 		},
 		{
@@ -146,6 +157,17 @@ func TestDraw(t *testing.T) {
 				down(1),
 				fmtLine(window.CSI, 0, "G"),           // Set column to 0
 				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
+			),
+		},
+		{
+			description:      "Remove new line from short line",
+			currentValue:     "Hello",
+			currentPosition:  5,
+			previousValue:    "Hello\n",
+			previousPosition: 6,
+			expectedOutput: fmtLine(
+				right(5),
+				up(1),
 			),
 		},
 		{

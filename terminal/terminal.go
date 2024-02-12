@@ -91,10 +91,18 @@ func (terminal Terminal) Draw() {
 				} else {
 					// Update Line
 					terminal.logger.Debugf("update line")
-					firstCursor = previousCursorOffset
-					secondCursor = currentCursorOffset
-					terminal.drawLine(dataPair.First, firstCursor, dataPair.Second, secondCursor)
-					didUpdate = true
+					if dataPair.Second == emptyString {
+						terminal.moveCursor(
+							previousCursorRow, previousCursorOffset,
+							currentCursorRow, currentCursorOffset,
+						)
+						didUpdate = true
+					} else {
+						firstCursor = previousCursorOffset
+						secondCursor = currentCursorOffset
+						terminal.drawLine(dataPair.First, firstCursor, dataPair.Second, secondCursor)
+						didUpdate = true
+					}
 				}
 			}
 		}
@@ -149,7 +157,7 @@ func (terminal Terminal) moveCursor(
 	_, previousRollover := utils.ModAdd(previousCursorOffset, 0, windowWidth)
 	rolloverValue := currentRollover - previousRollover
 
-	y := rolloverValue + (previousCursorRow - currentCursorRow)
+	y := rolloverValue + (currentCursorRow - previousCursorRow)
 	x := currentCursorOffset - previousCursorOffset + (-1 * rolloverValue * windowWidth)
 
 	terminal.window.MoveCursor(x, y)
