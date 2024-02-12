@@ -203,6 +203,24 @@ func TestDraw(t *testing.T) {
 				",",
 			),
 		},
+		{
+			description:      "Paste multiple lines",
+			currentValue:     "Hello,\nworld\nmultiple",
+			currentPosition:  20,
+			previousValue:    "",
+			previousPosition: 0,
+			expectedOutput: fmtLine(
+				"Hello,",
+				down(1),
+				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
+				"world",
+				down(1),
+				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
+				"multiple",
+			),
+		},
 	}
 
 	for _, trial := range trials {

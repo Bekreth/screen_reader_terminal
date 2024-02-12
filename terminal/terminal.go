@@ -66,6 +66,7 @@ func (terminal Terminal) Draw() {
 
 	didUpdate := false
 
+	thisCursorRow := previousCursorRow
 	if previousData != currentData {
 		for i, dataPair := range zippedLines {
 			if dataPair.First != dataPair.Second {
@@ -73,7 +74,8 @@ func (terminal Terminal) Draw() {
 				firstCursor := 0
 				secondCursor := 0
 
-				y := currentCursorRow - previousCursorRow
+				y := thisRow - thisCursorRow
+				thisCursorRow = thisRow
 				if previousCursorRow != thisRow {
 					// Rewrite Whole line
 					existingLine := dataPair.First != emptyString
@@ -90,17 +92,22 @@ func (terminal Terminal) Draw() {
 					didUpdate = true
 				} else {
 					// Update Line
-					terminal.logger.Debugf("update line")
 					if dataPair.Second == emptyString {
+						// Handle backspace across wrap
 						terminal.moveCursor(
 							previousCursorRow, previousCursorOffset,
 							currentCursorRow, currentCursorOffset,
 						)
 						didUpdate = true
 					} else {
+						//Updating line in place
 						firstCursor = previousCursorOffset
 						secondCursor = currentCursorOffset
-						terminal.drawLine(dataPair.First, firstCursor, dataPair.Second, secondCursor)
+						terminal.drawLine(
+							previousCursorRow == currentCursorRow,
+							dataPair.First, firstCursor,
+							dataPair.Second, secondCursor,
+						)
 						didUpdate = true
 					}
 				}
@@ -121,6 +128,7 @@ func (terminal Terminal) Draw() {
 
 // drawLine
 func (terminal Terminal) drawLine(
+	shouldBackshift bool,
 	previousLineData string, previousCursor int,
 	currentLineData string, currentCursor int,
 ) {
@@ -137,7 +145,7 @@ func (terminal Terminal) drawLine(
 		terminal.window.MoveCursor(-1*len(newEnd), 0)
 	} else {
 		terminal.window.Write([]byte(newEnd))
-		if len(newEnd) != currentCursor-previousCursor {
+		if shouldBackshift && len(newEnd) != currentCursor-previousCursor {
 			backshift := len(newEnd) - 1
 			delta := backshift % width
 			rollback := backshift / width
@@ -164,17 +172,7 @@ func (terminal Terminal) moveCursor(
 }
 
 func (terminal Terminal) NewLine() {
-	currentValue, currentPosition := terminal.CurrentBuffer().Output()
-	terminal.moveCursor(
-		0, currentPosition,
-		0, len(currentValue),
-	)
-	lineCount := terminal.CurrentBuffer().NewLineCount()
-	newLines := "\n"
-	for i := 0; i < lineCount-1; i++ {
-		newLines += "\n"
-	}
-	terminal.window.Write([]byte(newLines))
+	terminal.window.Write([]byte("\n"))
 	terminal.history.AddBuffer(*terminal.buffer)
 	terminal.buffer.Clear()
 }
