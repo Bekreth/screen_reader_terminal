@@ -67,52 +67,42 @@ func (terminal Terminal) Draw() {
 	if previousData != currentData {
 		for i, dataPair := range zippedLines {
 			if dataPair.First != dataPair.Second {
+				thisRow := i + 1
 				firstCursor := 0
 				secondCursor := 0
-				restoreCursor := false
 
-				if previousCursorRow != i+1 {
-					//TODO:
-					terminal.logger.Debugf("Not last line")
+				terminal.logger.Infof("FIRST: %v : SECOND: %v :", dataPair.First, dataPair.Second)
+				if previousCursorRow != thisRow {
+					terminal.logger.Infof("rewrite line")
+					// Rewrite Whole line
 					terminal.window.SaveCursor()
-					x := currentCursorOffset - previousCursorOffset
 					y := currentCursorRow - previousCursorRow
-					terminal.window.MoveCursor(x, y)
-					restoreCursor = true
+					terminal.window.MoveCursor(0, y)
+					terminal.window.SetCursorColumn(0)
+					terminal.window.ClearLine(window.FULL)
+					terminal.window.Write([]byte(dataPair.Second))
+					terminal.window.RestoreCursor()
 				} else {
+					// Update Line
+					terminal.logger.Infof("update line")
 					firstCursor = previousCursorOffset
 					secondCursor = currentCursorOffset
-				}
-				terminal.drawLine(dataPair.First, firstCursor, dataPair.Second, secondCursor)
-				didUpdate = true
-				if restoreCursor {
-					terminal.window.RestoreCursor()
+					terminal.drawLine(dataPair.First, firstCursor, dataPair.Second, secondCursor)
+					didUpdate = true
 				}
 			}
 		}
 	} else if previousCursor != currentCursor {
-		terminal.moveCursor(previousCursor, currentCursor)
+		terminal.moveCursor(
+			previousCursorRow, previousCursorOffset,
+			currentCursorRow, currentCursorOffset,
+		)
 		didUpdate = true
 	}
 
 	if didUpdate {
 		terminal.buffer.UpdatePrevious()
 	}
-}
-
-func lineDiff(
-	lastLineData string, lastCursor int,
-	lineData string, cursor int,
-) string {
-	checkEdge := utils.IntMin(lastCursor, cursor)
-	newEnd := lineData[checkEdge:]
-	for i := 0; i <= checkEdge; i++ {
-		if lineData[0:i] != lastLineData[0:i] {
-			newEnd = lineData[i:]
-			break
-		}
-	}
-	return newEnd
 }
 
 // drawLine
@@ -127,7 +117,7 @@ func (terminal Terminal) drawLine(
 	)
 
 	if currentCursor < previousCursor {
-		terminal.moveCursor(previousCursor, currentCursor)
+		terminal.moveCursor(0, previousCursor, 0, currentCursor)
 		terminal.window.ClearLine(window.CURSOR_FORWARD)
 		terminal.window.Write([]byte(newEnd))
 		terminal.window.MoveCursor(-1*len(newEnd), 0)
@@ -144,21 +134,26 @@ func (terminal Terminal) drawLine(
 
 // moveCursor calculates the difference between cursor and lastCursor and writes the
 // appropriate ANSII control characters to make the terminal match the difference
-func (terminal Terminal) moveCursor(previousCursor int, currentCursor int) {
-	// TODO make this new line aware
+func (terminal Terminal) moveCursor(
+	previousCursorRow int, previousCursorOffset int,
+	currentCursorRow int, currentCursorOffset int,
+) {
 	windowWidth := terminal.window.GetWindowSize().Width
-	_, rollover := utils.ModAdd(currentCursor, 0, windowWidth)
-	_, lastRollover := utils.ModAdd(previousCursor, 0, windowWidth)
-	y := rollover - lastRollover
-	x := currentCursor - previousCursor + (-1 * y * windowWidth)
+	_, currentRollover := utils.ModAdd(currentCursorOffset, 0, windowWidth)
+	_, previousRollover := utils.ModAdd(previousCursorOffset, 0, windowWidth)
+	rolloverValue := currentRollover - previousRollover
+
+	y := rolloverValue + (previousCursorRow - currentCursorRow)
+	x := currentCursorOffset - previousCursorOffset + (-1 * rolloverValue * windowWidth)
+
 	terminal.window.MoveCursor(x, y)
 }
 
 func (terminal Terminal) NewLine() {
 	currentValue, currentPosition := terminal.CurrentBuffer().Output()
 	terminal.moveCursor(
-		currentPosition,
-		len(currentValue),
+		0, currentPosition,
+		0, len(currentValue),
 	)
 	lineCount := terminal.CurrentBuffer().NewLineCount()
 	newLines := "\n"
@@ -168,40 +163,4 @@ func (terminal Terminal) NewLine() {
 	terminal.window.Write([]byte(newLines))
 	terminal.history.AddBuffer(*terminal.buffer)
 	terminal.buffer.Clear()
-}
-
-// Calculates how many rows the current value crosses and on which line
-// the cursor is currently positioned
-func (terminal Terminal) determineRows(currentValue string, cursor int) (int, int, int) {
-	if currentValue == "" {
-		return 1, 1, 0
-	}
-	width := terminal.window.GetWindowSize().Width
-
-	newLineIndicies := append([]int{0}, utils.IndiciesOfChar(currentValue, '\n')...)
-	splitValues := strings.Split(currentValue, "\n")
-
-	totalRowCount := 0
-	cursorRow := 0
-	cursorOffset := 0
-	for i := range newLineIndicies {
-		lineLength := len(splitValues[i]) + 1
-		rowIncrementor := int(lineLength/width) + 1
-		totalRowCount += rowIncrementor
-
-		if cursor >= 0 {
-			if lineLength > cursor {
-				cursorOffset = cursor % width
-				if cursor == 1 {
-					cursorRow += 1
-				} else {
-					cursorRow += (cursor / width) + 1
-				}
-			} else {
-				cursorRow += rowIncrementor
-			}
-			cursor -= lineLength
-		}
-	}
-	return totalRowCount, cursorRow, cursorOffset
 }
