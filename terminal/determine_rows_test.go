@@ -118,6 +118,18 @@ func TestDetermineRows(t *testing.T) {
 			expectedOffset:   7,
 		},
 		{
+			description:      "cursor end of short line with new line character",
+			prefix:           "small: ",
+			previousPrefix:   "",
+			currentPosition:  12,
+			currentValue:     "hello world\n",
+			previousPosition: 11,
+			previousValue:    "hello world",
+			expectedRow:      2,
+			expectedCursor:   2,
+			expectedOffset:   0,
+		},
+		{
 			description:      "0. several small lines, cursor at start",
 			prefix:           "small: ",
 			previousPrefix:   "",

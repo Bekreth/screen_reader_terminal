@@ -28,6 +28,30 @@ type testWindow struct {
 	io.Writer
 }
 
+func fmtLine(input ...any) string {
+	format := ""
+	for i := 0; i < len(input); i++ {
+		format += "%v"
+	}
+	return fmt.Sprintf(format, input...)
+}
+
+func up(input int) string {
+	return fmtLine(window.CSI, input, "A")
+}
+
+func down(input int) string {
+	return fmtLine(window.CSI, input, "B")
+}
+
+func left(input int) string {
+	return fmtLine(window.CSI, input, "D")
+}
+
+func right(input int) string {
+	return fmtLine(window.CSI, input, "C")
+}
+
 // tests
 
 func TestDraw(t *testing.T) {
@@ -55,7 +79,7 @@ func TestDraw(t *testing.T) {
 			currentPosition:  11,
 			previousValue:    "",
 			previousPosition: 0,
-			expectedOutput: fmt.Sprintf("%v",
+			expectedOutput: fmtLine(
 				"Hello world",
 			),
 		},
@@ -65,7 +89,7 @@ func TestDraw(t *testing.T) {
 			currentPosition:  11,
 			previousValue:    "Hello worl",
 			previousPosition: 10,
-			expectedOutput: fmt.Sprintf("%v",
+			expectedOutput: fmtLine(
 				"d",
 			),
 		},
@@ -75,9 +99,9 @@ func TestDraw(t *testing.T) {
 			currentPosition:  10,
 			previousValue:    "Hello world",
 			previousPosition: 11,
-			expectedOutput: fmt.Sprintf("%v%v",
-				fmt.Sprintf("%v%v%v", window.CSI, 1, "D"),                     // Move cursor left by 1
-				fmt.Sprintf("%v%v%v", window.CSI, window.CURSOR_FORWARD, "K"), // Remove the text
+			expectedOutput: fmtLine(
+				left(1),
+				fmtLine(window.CSI, window.CURSOR_FORWARD, "K"), // Remove the text
 			),
 		},
 		{
@@ -86,9 +110,9 @@ func TestDraw(t *testing.T) {
 			currentPosition:  6,
 			previousValue:    "Hello world",
 			previousPosition: 5,
-			expectedOutput: fmt.Sprintf("%v%v",
+			expectedOutput: fmtLine(
 				", world",
-				fmt.Sprintf("%v%v%v", window.CSI, 6, "D"), // Move cursor left by 3
+				left(6),
 			),
 		},
 		{
@@ -97,8 +121,8 @@ func TestDraw(t *testing.T) {
 			currentPosition:  7,
 			previousValue:    "Hello world",
 			previousPosition: 10,
-			expectedOutput: fmt.Sprintf("%v%v%v",
-				window.CSI, 3, "D", // Move cursor left by 3
+			expectedOutput: fmtLine(
+				left(3),
 			),
 		},
 		{
@@ -107,9 +131,34 @@ func TestDraw(t *testing.T) {
 			currentPosition:  4,
 			previousValue:    "Hello\nworld",
 			previousPosition: 11,
-			expectedOutput: fmt.Sprintf("%v%v",
-				fmt.Sprintf("%v%v%v", window.CSI, 1, "D"), // Move cursor left by 3
-				fmt.Sprintf("%v%v%v", window.CSI, 1, "B"), // Move cursor Up by 3
+			expectedOutput: fmtLine(
+				left(1),
+				fmtLine(window.CSI, 1, "B"), // Move cursor Up by 3
+			),
+		},
+		{
+			description:      "Update short line to have new line",
+			currentValue:     "Hello\n",
+			currentPosition:  6,
+			previousValue:    "Hello",
+			previousPosition: 5,
+			expectedOutput: fmtLine(
+				down(1),
+				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
+			),
+		},
+		{
+			description:      "Update short line to have new line and short line",
+			currentValue:     "Hello\nWorld",
+			currentPosition:  11,
+			previousValue:    "Hello",
+			previousPosition: 5,
+			expectedOutput: fmtLine(
+				down(1),
+				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
+				"World",
 			),
 		},
 		{
@@ -118,7 +167,7 @@ func TestDraw(t *testing.T) {
 			currentPosition:  11,
 			previousValue:    "Hello\nworl",
 			previousPosition: 10,
-			expectedOutput: fmt.Sprintf("%v",
+			expectedOutput: fmtLine(
 				"d",
 			),
 		},
@@ -128,7 +177,7 @@ func TestDraw(t *testing.T) {
 			currentPosition:  6,
 			previousValue:    "Hello\nworld",
 			previousPosition: 5,
-			expectedOutput: fmt.Sprintf("%v",
+			expectedOutput: fmtLine(
 				",",
 			),
 		},

@@ -41,6 +41,8 @@ func (terminal Terminal) CurrentBuffer() *buffer.Buffer {
 	return terminal.buffer
 }
 
+const emptyString = "[~empty~]"
+
 func (terminal Terminal) Draw() {
 	previousData, previousCursor := terminal.buffer.PreviousOutput()
 	splitPreviousData := strings.Split(previousData, "\n")
@@ -59,7 +61,7 @@ func (terminal Terminal) Draw() {
 	zippedLines := utils.Zip(
 		splitPreviousData,
 		splitCurrentData,
-		func() string { return "" },
+		func() string { return emptyString },
 	)
 
 	didUpdate := false
@@ -71,20 +73,24 @@ func (terminal Terminal) Draw() {
 				firstCursor := 0
 				secondCursor := 0
 
-				terminal.logger.Infof("FIRST: %v : SECOND: %v :", dataPair.First, dataPair.Second)
+				y := currentCursorRow - previousCursorRow
 				if previousCursorRow != thisRow {
-					terminal.logger.Infof("rewrite line")
 					// Rewrite Whole line
-					terminal.window.SaveCursor()
-					y := currentCursorRow - previousCursorRow
+					existingLine := dataPair.First != emptyString
+					if existingLine {
+						terminal.window.SaveCursor()
+					}
 					terminal.window.MoveCursor(0, y)
 					terminal.window.SetCursorColumn(0)
 					terminal.window.ClearLine(window.FULL)
 					terminal.window.Write([]byte(dataPair.Second))
-					terminal.window.RestoreCursor()
+					if existingLine {
+						terminal.window.RestoreCursor()
+					}
+					didUpdate = true
 				} else {
 					// Update Line
-					terminal.logger.Infof("update line")
+					terminal.logger.Debugf("update line")
 					firstCursor = previousCursorOffset
 					secondCursor = currentCursorOffset
 					terminal.drawLine(dataPair.First, firstCursor, dataPair.Second, secondCursor)
