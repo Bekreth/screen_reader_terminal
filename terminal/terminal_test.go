@@ -36,6 +36,10 @@ func fmtLine(input ...any) string {
 	return fmt.Sprintf(format, input...)
 }
 
+func column(input int) string {
+	return fmtLine(window.CSI, input, "G")
+}
+
 func up(input int) string {
 	return fmtLine(window.CSI, input, "A")
 }
@@ -155,7 +159,7 @@ func TestDraw(t *testing.T) {
 			previousPosition: 5,
 			expectedOutput: fmtLine(
 				down(1),
-				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				column(0),
 				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
 			),
 		},
@@ -178,7 +182,7 @@ func TestDraw(t *testing.T) {
 			previousPosition: 5,
 			expectedOutput: fmtLine(
 				down(1),
-				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				column(0),
 				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
 				"World",
 			),
@@ -212,13 +216,43 @@ func TestDraw(t *testing.T) {
 			expectedOutput: fmtLine(
 				"Hello,",
 				down(1),
-				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				column(0),
 				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
 				"world",
 				down(1),
-				fmtLine(window.CSI, 0, "G"),           // Set column to 0
+				column(0),
 				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
 				"multiple",
+			),
+		},
+		{
+			description:      "Long line before rollover",
+			currentValue:     "12345678901234567890",
+			currentPosition:  20,
+			previousValue:    "1234567890123456789",
+			previousPosition: 19,
+			expectedOutput: fmtLine(
+				"0",
+			),
+		},
+		{
+			description:      "Long line during rollover",
+			currentValue:     "123456789012345678901",
+			currentPosition:  21,
+			previousValue:    "12345678901234567890",
+			previousPosition: 20,
+			expectedOutput: fmtLine(
+				"1",
+			),
+		},
+		{
+			description:      "Long line after rollover",
+			currentValue:     "1234567890123456789012",
+			currentPosition:  22,
+			previousValue:    "123456789012345678901",
+			previousPosition: 21,
+			expectedOutput: fmtLine(
+				"2",
 			),
 		},
 	}

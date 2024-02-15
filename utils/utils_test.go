@@ -105,7 +105,10 @@ func TestZip(t *testing.T) {
 
 	for _, trial := range trials {
 		t.Run(trial.description, func(tt *testing.T) {
-			actualOutput := Zip(trial.firstList, trial.secondList, func() int { return 0 })
+			actualOutput := Zip(
+				trial.firstList, trial.secondList,
+				func() int { return 0 },
+			)
 			assert.Equal(t, trial.expectedOutput, actualOutput)
 		})
 	}

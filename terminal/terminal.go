@@ -1,8 +1,6 @@
 package terminal
 
 import (
-	"strings"
-
 	"github.com/bekreth/screen_reader_terminal/buffer"
 	"github.com/bekreth/screen_reader_terminal/history"
 	"github.com/bekreth/screen_reader_terminal/utils"
@@ -44,28 +42,29 @@ func (terminal Terminal) CurrentBuffer() *buffer.Buffer {
 const emptyString = "[~empty~]"
 
 func (terminal Terminal) Draw() {
+	// Breaking up data from previous render
 	previousData, previousCursor := terminal.buffer.PreviousOutput()
-	splitPreviousData := strings.Split(previousData, "\n")
-	_, previousCursorRow, previousCursorOffset := terminal.determineRows(
+	previousDataRow, previousCursorRow, previousCursorOffset := terminal.determineRows(
 		previousData,
 		previousCursor,
 	)
 
+	// Breaking up data from current render
 	currentData, currentCursor := terminal.buffer.Output()
-	splitCurrentData := strings.Split(currentData, "\n")
-	_, currentCursorRow, currentCursorOffset := terminal.determineRows(
+	currentDataRow, currentCursorRow, currentCursorOffset := terminal.determineRows(
 		currentData,
 		currentCursor,
 	)
 
+	// Splicing together
 	zippedLines := utils.Zip(
-		splitPreviousData,
-		splitCurrentData,
+		previousDataRow,
+		currentDataRow,
 		func() string { return emptyString },
 	)
 
+	// Calculating delta
 	didUpdate := false
-
 	thisCursorRow := previousCursorRow
 	if previousData != currentData {
 		for i, dataPair := range zippedLines {
@@ -133,12 +132,18 @@ func (terminal Terminal) drawLine(
 	currentLineData string, currentCursor int,
 ) {
 	width := terminal.window.GetWindowSize().Width
-	newEnd := lineDiff(
-		previousLineData, previousCursor,
-		currentLineData, currentCursor,
-	)
+	var newEnd string
+	if previousLineData == "" {
+		newEnd = currentLineData
+	} else {
+		newEnd = lineDiff(
+			previousLineData, previousCursor,
+			currentLineData, currentCursor,
+		)
+	}
 
-	if currentCursor < previousCursor {
+	edgeRollback := currentCursor-previousCursor == -1*width+1
+	if currentCursor < previousCursor && !edgeRollback {
 		terminal.moveCursor(0, previousCursor, 0, currentCursor)
 		terminal.window.ClearLine(window.CURSOR_FORWARD)
 		terminal.window.Write([]byte(newEnd))
