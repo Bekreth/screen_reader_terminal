@@ -8,50 +8,63 @@ import (
 
 // Calculates how many rows the current value crosses and on which line
 // the cursor is currently positioned
-func (terminal Terminal) determineRows(currentValue string, cursor int) ([]string, int, int) {
+func (terminal Terminal) determineRows(
+	currentValue string,
+	cursor int,
+) ([]string, int, int) {
+	terminal.logger.Debugf("CURSOR %v\tVALUE '%v'", cursor, currentValue)
 	if currentValue == "" {
-		return []string{}, 1, 0
+		return []string{}, 0, 0
 	}
 	width := terminal.window.GetWindowSize().Width
-
-	newLineIndicies := append([]int{0}, utils.IndiciesOfChar(currentValue, '\n')...)
 	splitValues := strings.Split(currentValue, "\n")
 
 	rows := []string{}
-	cursorRow := 0
+	cursorRows := 0
 	cursorOffset := 0
-	for i := range newLineIndicies {
-		lineLength := len(splitValues[i]) + 1
-		rowIncrementor := int(lineLength/width) + 1
-		previousIndex := 0
-		rowLength := len(splitValues[i])
-		for j := 0; j < rowIncrementor; j++ {
-			row := splitValues[i]
-			start := previousIndex
-			end := start + width
-			if start+width > rowLength {
-				end = rowLength
+
+	cursorCounter := 0
+	advancingCursor := true
+	for i, line := range splitValues {
+		terminal.logger.Debugf("  LINE '%v', LEN '%v'", line, len(line))
+		lineLength := len(line)
+		if lineLength == 0 {
+			rows = append(rows, "")
+		}
+		if advancingCursor {
+			cursorOffset = 0
+			if lineLength == 0 {
+				continue
 			}
-			rows = append(rows, row[start:end])
-			previousIndex = end
+			if i != 0 {
+				cursorCounter += 1
+			}
 		}
 
-		if cursor >= 0 {
-			if lineLength > cursor {
-				cursorOffset = cursor % width
-				if cursorOffset == 0 && cursor != 0 {
-					cursorOffset = width
+		for j := 0; j < lineLength; j += width {
+			lineEnd := utils.IntMin(j+width, lineLength)
+			row := line[j:lineEnd]
+			terminal.logger.Debugf("    ROW '%v', LINEEND '%v'", row, lineEnd)
+			rows = append(rows, row)
+			if advancingCursor {
+				advanceCursorStep := utils.IntMin(len(row), cursor-cursorCounter)
+				cursorCounter += advanceCursorStep
+				cursorOffset = advanceCursorStep % width
+				terminal.logger.Debugf("      ROWLEN '%v', WIDTH '%v'", len(row), width)
+				terminal.logger.Debugf("      AC '%v', CC '%v', CO '%v'", advanceCursorStep, cursorCounter, cursorOffset)
+				if cursorCounter >= cursor {
+					if cursorCounter%width == 0 {
+						cursorRows += 1
+					}
+					terminal.logger.Debugf("    === Closing cursor ===")
+					advancingCursor = false
 				}
-				if cursor == 1 {
-					cursorRow += 1
-				} else {
-					cursorRow += (cursor / width) + 1
-				}
-			} else {
-				cursorRow += rowIncrementor
 			}
-			cursor -= lineLength
+			if advancingCursor {
+				cursorRows += 1
+			}
+			terminal.logger.Debugf("      CROW: %v, OFFSET: %v\n", cursorRows, cursorOffset)
 		}
 	}
-	return rows, cursorRow, cursorOffset
+	return rows, cursorRows, cursorOffset
 }

@@ -56,6 +56,13 @@ func (terminal Terminal) Draw() {
 		currentCursor,
 	)
 
+	terminal.logger.Debugf(
+		"DETERMINES: previous %v: '%v' current %v: '%v'",
+		len(previousDataRow),
+		previousDataRow,
+		len(currentDataRow),
+		currentDataRow,
+	)
 	// Splicing together
 	zippedLines := utils.Zip(
 		previousDataRow,
@@ -64,116 +71,50 @@ func (terminal Terminal) Draw() {
 	)
 
 	// Calculating delta
-	didUpdate := false
-	thisCursorRow := previousCursorRow
+	//width := terminal.window.GetWindowSize().Width
+	terminal.logger.Debugf(
+		"PC '%v' PR '%v', CC '%v' CR '%v', ",
+		previousCursorOffset, previousCursorRow,
+		currentCursorOffset, currentCursorRow,
+	)
+	coords := newCoords(previousCursorOffset, previousCursorRow)
 	if previousData != currentData {
-		for i, dataPair := range zippedLines {
-			if dataPair.First != dataPair.Second {
-				thisRow := i + 1
-				firstCursor := 0
-				secondCursor := 0
-
-				y := thisRow - thisCursorRow
-				thisCursorRow = thisRow
-				if previousCursorRow != thisRow {
-					// Rewrite Whole line
-					existingLine := dataPair.First != emptyString
-					if existingLine {
-						terminal.window.SaveCursor()
-					}
-					terminal.window.MoveCursor(0, y)
-					terminal.window.SetCursorColumn(0)
-					terminal.window.ClearLine(window.FULL)
-					terminal.window.Write([]byte(dataPair.Second))
-					if existingLine {
-						terminal.window.RestoreCursor()
-					}
-					didUpdate = true
-				} else {
-					// Update Line
-					if dataPair.Second == emptyString {
-						// Handle backspace across wrap
-						terminal.moveCursor(
-							previousCursorRow, previousCursorOffset,
-							currentCursorRow, currentCursorOffset,
-						)
-						didUpdate = true
-					} else {
-						//Updating line in place
-						firstCursor = previousCursorOffset
-						secondCursor = currentCursorOffset
-						terminal.drawLine(
-							previousCursorRow == currentCursorRow,
-							dataPair.First, firstCursor,
-							dataPair.Second, secondCursor,
-						)
-						didUpdate = true
-					}
-				}
-			}
-		}
-	} else if previousCursor != currentCursor {
-		terminal.moveCursor(
+		terminal.logger.Debugf(
+			"PR %v PC %v CR %v CC %v",
 			previousCursorRow, previousCursorOffset,
 			currentCursorRow, currentCursorOffset,
 		)
-		didUpdate = true
-	}
+		for i, dataPair := range zippedLines {
+			terminal.logger.Debugf("================= ROW # %v", 1)
+			terminal.logger.Debugf("PD '%v' CD '%v'", dataPair.First, dataPair.Second)
+			rowRequiresUpdate := dataPair.First != dataPair.Second
+			if rowRequiresUpdate {
+				coords = coords.setPendingRow(i)
+				if dataPair.Second == emptyString {
+					moveX, moveY := coords.outputDelataToTarget()
+					terminal.window.MoveCursor(moveX, moveY)
+					coords = coords.applyPendingDeltas()
 
-	if didUpdate {
-		terminal.buffer.UpdatePrevious()
-	}
-}
-
-// drawLine
-func (terminal Terminal) drawLine(
-	shouldBackshift bool,
-	previousLineData string, previousCursor int,
-	currentLineData string, currentCursor int,
-) {
-	width := terminal.window.GetWindowSize().Width
-	var newEnd string
-	if previousLineData == "" {
-		newEnd = currentLineData
-	} else {
-		newEnd = lineDiff(
-			previousLineData, previousCursor,
-			currentLineData, currentCursor,
-		)
-	}
-
-	edgeRollback := currentCursor-previousCursor == -1*width+1
-	if currentCursor < previousCursor && !edgeRollback {
-		terminal.moveCursor(0, previousCursor, 0, currentCursor)
-		terminal.window.ClearLine(window.CURSOR_FORWARD)
-		terminal.window.Write([]byte(newEnd))
-		terminal.window.MoveCursor(-1*len(newEnd), 0)
-	} else {
-		terminal.window.Write([]byte(newEnd))
-		if shouldBackshift && len(newEnd) != currentCursor-previousCursor {
-			backshift := len(newEnd) - 1
-			delta := backshift % width
-			rollback := backshift / width
-			terminal.window.MoveCursor(-1*delta, rollback)
+					terminal.window.ClearLine(window.FULL)
+					continue
+				}
+				terminal.logger.Debugf("LOCATION Before: %v", coords)
+				coords = terminal.drawRow(dataPair.First, dataPair.Second, coords)
+				terminal.logger.Debugf("LOCATION after: %v", coords)
+			}
 		}
 	}
-}
+	coords = coords.setPendingColumn(currentCursorOffset).
+		setPendingRow(currentCursorRow)
 
-// moveCursor calculates the difference between cursor and lastCursor and writes the
-// appropriate ANSII control characters to make the terminal match the difference
-func (terminal Terminal) moveCursor(
-	previousCursorRow int, previousCursorOffset int,
-	currentCursorRow int, currentCursorOffset int,
-) {
-	windowWidth := terminal.window.GetWindowSize().Width
-	_, currentRollover := utils.ModAdd(currentCursorOffset, 0, windowWidth)
-	_, previousRollover := utils.ModAdd(previousCursorOffset, 0, windowWidth)
-	rolloverValue := currentRollover - previousRollover
+	terminal.logger.Debugf("TARGET LOC: %v", coords)
+	moveX, moveY := coords.outputDelataToTarget()
+	coords = coords.applyPendingDeltas()
 
-	y := rolloverValue + (currentCursorRow - previousCursorRow)
-	x := currentCursorOffset - previousCursorOffset + (-1 * rolloverValue * windowWidth)
-
-	terminal.window.MoveCursor(x, y)
+	terminal.window.MoveCursor(moveX, moveY)
+	terminal.buffer.UpdatePrevious()
+	terminal.logger.Debugf("")
+	terminal.logger.Debugf("")
 }
 
 func (terminal Terminal) NewLine() {

@@ -1,8 +1,6 @@
 package terminal
 
 import (
-	"fmt"
-	"io"
 	"testing"
 
 	"github.com/bekreth/screen_reader_terminal/buffer"
@@ -12,249 +10,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// test interface implmenetations
-
-type testFile struct {
-	written []byte
-}
-
-func (window *testFile) Write(input []byte) (int, error) {
-	window.written = append(window.written, input...)
-	return len(input), nil
-}
-
-type testWindow struct {
-	window.Window
-	io.Writer
-}
-
-func fmtLine(input ...any) string {
-	format := ""
-	for i := 0; i < len(input); i++ {
-		format += "%v"
-	}
-	return fmt.Sprintf(format, input...)
-}
-
-func column(input int) string {
-	return fmtLine(window.CSI, input, "G")
-}
-
-func up(input int) string {
-	return fmtLine(window.CSI, input, "A")
-}
-
-func down(input int) string {
-	return fmtLine(window.CSI, input, "B")
-}
-
-func left(input int) string {
-	return fmtLine(window.CSI, input, "D")
-}
-
-func right(input int) string {
-	return fmtLine(window.CSI, input, "C")
-}
-
 // tests
 
+type drawTrial struct {
+	description      string
+	previousPrefix   string
+	prefix           string
+	previousValue    string
+	previousPosition int
+	currentValue     string
+	currentPosition  int
+	expectedOutput   string
+}
+
 func TestDraw(t *testing.T) {
-	trials := []struct {
-		description      string
-		previousPrefix   string
-		prefix           string
-		currentValue     string
-		currentPosition  int
-		previousValue    string
-		previousPosition int
-		expectedOutput   string
-	}{
-		{
-			description:      "Draw empty buffer",
-			currentValue:     "",
-			currentPosition:  0,
-			previousValue:    "",
-			previousPosition: 0,
-			expectedOutput:   "",
-		},
-		{
-			description:      "Draw new buffer",
-			currentValue:     "Hello world",
-			currentPosition:  11,
-			previousValue:    "",
-			previousPosition: 0,
-			expectedOutput: fmtLine(
-				"Hello world",
-			),
-		},
-		{
-			description:      "Add character to buffer end",
-			currentValue:     "Hello world",
-			currentPosition:  11,
-			previousValue:    "Hello worl",
-			previousPosition: 10,
-			expectedOutput: fmtLine(
-				"d",
-			),
-		},
-		{
-			description:      "Remove character from buffer end",
-			currentValue:     "Hello worl",
-			currentPosition:  10,
-			previousValue:    "Hello world",
-			previousPosition: 11,
-			expectedOutput: fmtLine(
-				left(1),
-				fmtLine(window.CSI, window.CURSOR_FORWARD, "K"), // Remove the text
-			),
-		},
-		{
-			description:      "Insert text in middle of line",
-			currentValue:     "Hello, world",
-			currentPosition:  6,
-			previousValue:    "Hello world",
-			previousPosition: 5,
-			expectedOutput: fmtLine(
-				", world",
-				left(6),
-			),
-		},
-		{
-			description:      "Move cursor back 3",
-			currentValue:     "Hello world",
-			currentPosition:  7,
-			previousValue:    "Hello world",
-			previousPosition: 10,
-			expectedOutput: fmtLine(
-				left(3),
-			),
-		},
-		{
-			description:      "Move cursor forward over new line",
-			currentValue:     "Hello\nworld",
-			currentPosition:  11,
-			previousValue:    "Hello\nworld",
-			previousPosition: 4,
-			expectedOutput: fmtLine(
-				right(1),
-				down(1),
-			),
-		},
-		{
-			description:      "Move cursor back over new line",
-			currentValue:     "Hello\nworld",
-			currentPosition:  4,
-			previousValue:    "Hello\nworld",
-			previousPosition: 11,
-			expectedOutput: fmtLine(
-				left(1),
-				up(1),
-			),
-		},
-		{
-			description:      "Update short line to have new line",
-			currentValue:     "Hello\n",
-			currentPosition:  6,
-			previousValue:    "Hello",
-			previousPosition: 5,
-			expectedOutput: fmtLine(
-				down(1),
-				column(0),
-				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
-			),
-		},
-		{
-			description:      "Remove new line from short line",
-			currentValue:     "Hello",
-			currentPosition:  5,
-			previousValue:    "Hello\n",
-			previousPosition: 6,
-			expectedOutput: fmtLine(
-				right(5),
-				up(1),
-			),
-		},
-		{
-			description:      "Update short line to have new line and short line",
-			currentValue:     "Hello\nWorld",
-			currentPosition:  11,
-			previousValue:    "Hello",
-			previousPosition: 5,
-			expectedOutput: fmtLine(
-				down(1),
-				column(0),
-				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
-				"World",
-			),
-		},
-		{
-			description:      "Update last line in multi-line statement",
-			currentValue:     "Hello\nworld",
-			currentPosition:  11,
-			previousValue:    "Hello\nworl",
-			previousPosition: 10,
-			expectedOutput: fmtLine(
-				"d",
-			),
-		},
-		{
-			description:      "Update first line in multi-line statement",
-			currentValue:     "Hello,\nworld",
-			currentPosition:  6,
-			previousValue:    "Hello\nworld",
-			previousPosition: 5,
-			expectedOutput: fmtLine(
-				",",
-			),
-		},
-		{
-			description:      "Paste multiple lines",
-			currentValue:     "Hello,\nworld\nmultiple",
-			currentPosition:  20,
-			previousValue:    "",
-			previousPosition: 0,
-			expectedOutput: fmtLine(
-				"Hello,",
-				down(1),
-				column(0),
-				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
-				"world",
-				down(1),
-				column(0),
-				fmtLine(window.CSI, window.FULL, "K"), // Remove the text
-				"multiple",
-			),
-		},
-		{
-			description:      "Long line before rollover",
-			currentValue:     "12345678901234567890",
-			currentPosition:  20,
-			previousValue:    "1234567890123456789",
-			previousPosition: 19,
-			expectedOutput: fmtLine(
-				"0",
-			),
-		},
-		{
-			description:      "Long line during rollover",
-			currentValue:     "123456789012345678901",
-			currentPosition:  21,
-			previousValue:    "12345678901234567890",
-			previousPosition: 20,
-			expectedOutput: fmtLine(
-				"1",
-			),
-		},
-		{
-			description:      "Long line after rollover",
-			currentValue:     "1234567890123456789012",
-			currentPosition:  22,
-			previousValue:    "123456789012345678901",
-			previousPosition: 21,
-			expectedOutput: fmtLine(
-				"2",
-			),
-		},
+	trialsCollections := [][]drawTrial{
+		singleLineManipulations,
+		updatesWithNewLine,
+		longLineInsertRollover,
+		longLineDeleteRollover,
+		moveAcrossWrap,
+		removeFromMultiline,
+		insertInMultiline,
+	}
+
+	trials := []drawTrial{}
+	for _, trialCollection := range trialsCollections {
+		trials = append(trials, trialCollection...)
 	}
 
 	for _, trial := range trials {
@@ -296,4 +78,439 @@ func TestDraw(t *testing.T) {
 			assert.Equal(tt, []byte(trial.expectedOutput), file.written)
 		})
 	}
+}
+
+var singleLineManipulations = []drawTrial{
+	{
+		description:      "Draw empty buffer",
+		previousValue:    "",
+		previousPosition: 0,
+		currentValue:     "",
+		currentPosition:  0,
+		expectedOutput:   "",
+	},
+	{
+		description:      "Draw new buffer",
+		previousValue:    "",
+		previousPosition: 0,
+		currentValue:     "Hello world",
+		currentPosition:  11,
+		expectedOutput: fmtLine(
+			"Hello world",
+		),
+	},
+	{
+		description:      "Add character to buffer end",
+		previousValue:    "Hello worl",
+		previousPosition: 10,
+		currentValue:     "Hello world",
+		currentPosition:  11,
+		expectedOutput: fmtLine(
+			"d",
+		),
+	},
+	{
+		description:      "Remove character from buffer end",
+		previousValue:    "Hello world",
+		previousPosition: 11,
+		currentValue:     "Hello worl",
+		currentPosition:  10,
+		expectedOutput: fmtLine(
+			left(1),
+			clearCursorForward(),
+		),
+	},
+	{
+		description:      "Insert text in middle of line",
+		previousValue:    "Hello world",
+		previousPosition: 5,
+		currentValue:     "Hello, world",
+		currentPosition:  6,
+		expectedOutput: fmtLine(
+			", world",
+			left(6),
+		),
+	},
+	{
+		description:      "Move cursor back 3",
+		previousValue:    "Hello world",
+		previousPosition: 10,
+		currentValue:     "Hello world",
+		currentPosition:  7,
+		expectedOutput: fmtLine(
+			left(3),
+		),
+	},
+}
+
+var updatesWithNewLine = []drawTrial{
+	{
+		description:      "Move cursor forward over new line",
+		previousValue:    "Hello\nworld",
+		previousPosition: 4,
+		currentValue:     "Hello\nworld",
+		currentPosition:  11,
+		expectedOutput: fmtLine(
+			right(1),
+			down(1),
+		),
+	},
+	{
+		description:      "Move cursor back over new line",
+		previousValue:    "Hello\nworld",
+		previousPosition: 11,
+		currentValue:     "Hello\nworld",
+		currentPosition:  4,
+		expectedOutput: fmtLine(
+			left(1),
+			up(1),
+		),
+	},
+	{
+		description:      "Update short line to have new line",
+		previousValue:    "Hello",
+		previousPosition: 5,
+		currentValue:     "Hello\n",
+		currentPosition:  6,
+		expectedOutput: fmtLine(
+			left(5),
+			down(1),
+		),
+	},
+	{
+		description:      "Remove new line from short line",
+		previousValue:    "Hello\n",
+		previousPosition: 6,
+		currentValue:     "Hello",
+		currentPosition:  5,
+		expectedOutput: fmtLine(
+			clearCursorFullLine(),
+			right(5),
+			up(1),
+		),
+	},
+	{
+		description:      "Update short line to have new line and short line",
+		previousValue:    "Hello",
+		previousPosition: 5,
+		currentValue:     "Hello\nWorld",
+		currentPosition:  11,
+		expectedOutput: fmtLine(
+			left(5),
+			down(1),
+			"World",
+		),
+	},
+	{
+		description:      "Update last line in multi-line statement",
+		previousValue:    "Hello\nworl",
+		previousPosition: 10,
+		currentValue:     "Hello\nworld",
+		currentPosition:  11,
+		expectedOutput: fmtLine(
+			"d",
+		),
+	},
+	{
+		description:      "Update first line in multi-line statement",
+		previousValue:    "Hello\nworld",
+		previousPosition: 5,
+		currentValue:     "Hello,\nworld",
+		currentPosition:  6,
+		expectedOutput: fmtLine(
+			",",
+		),
+	},
+	{
+		description:      "Paste multiple lines",
+		previousValue:    "",
+		previousPosition: 0,
+		currentValue:     "Hello,\nworld\nmultiple",
+		currentPosition:  21,
+		expectedOutput: fmtLine(
+			"Hello,",
+			left(6),
+			down(1),
+			"world",
+			left(5),
+			down(1),
+			"multiple",
+		),
+	},
+}
+
+var longLineInsertRollover = []drawTrial{
+	{
+		description:      "Long line well before rollover",
+		previousValue:    "123456789012345678",
+		previousPosition: 18,
+		currentValue:     "1234567890123456789",
+		currentPosition:  19,
+		expectedOutput: fmtLine(
+			"9",
+		),
+	},
+	{
+		description:      "Long line before rollover",
+		previousValue:    "1234567890123456789",
+		previousPosition: 19,
+		currentValue:     "12345678901234567890",
+		currentPosition:  20,
+		expectedOutput: fmtLine(
+			"0",
+			left(20),
+			down(1),
+		),
+	},
+	{
+		description:      "Long line during rollover",
+		previousValue:    "12345678901234567890",
+		previousPosition: 20,
+		currentValue:     "123456789012345678901",
+		currentPosition:  21,
+		expectedOutput: fmtLine(
+			"1",
+		),
+	},
+	{
+		description:      "Long line after rollover",
+		previousValue:    "123456789012345678901",
+		previousPosition: 21,
+		currentValue:     "1234567890123456789012",
+		currentPosition:  22,
+		expectedOutput: fmtLine(
+			"2",
+		),
+	},
+}
+
+var longLineDeleteRollover = []drawTrial{
+	{
+		description:      "Long line delete before rollover",
+		previousValue:    "1234567890123456789012",
+		previousPosition: 22,
+		currentValue:     "123456789012345678901",
+		currentPosition:  21,
+		expectedOutput: fmtLine(
+			left(1),
+			clearCursorForward(),
+		),
+	},
+	{
+		description:      "Long line delete on rollover",
+		previousValue:    "123456789012345678901",
+		previousPosition: 21,
+		currentValue:     "12345678901234567890",
+		currentPosition:  20,
+		expectedOutput: fmtLine(
+			left(1),
+			clearCursorFullLine(),
+		),
+	},
+	{
+		description:      "Long line delete across rollover",
+		previousValue:    "12345678901234567890",
+		previousPosition: 20,
+		currentValue:     "1234567890123456789",
+		currentPosition:  19,
+		expectedOutput: fmtLine(
+			right(19),
+			up(1),
+			clearCursorForward(),
+		),
+	},
+	{
+		description: "Delete charater from row before row crossover",
+		//                                    *                  |*
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line of text that will allow for editing",
+		previousPosition: 39,
+		currentValue:     "a simple but long line of text that wil allow for editing",
+		currentPosition:  38,
+		expectedOutput: fmtLine(
+			" ",
+
+			left(20),
+			down(1),
+			clearCursorForward(),
+			"allow for editing",
+			right(1),
+			up(1),
+		),
+	},
+	{
+		description: "Delete charater from row one of multi-line",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line of text that will allow for editing",
+		previousPosition: 30,
+		currentValue:     "a simple but long line of tex that will allow for editing",
+		currentPosition:  29,
+		expectedOutput: fmtLine(
+			left(1),
+			" that will ",
+
+			left(20),
+			down(1),
+			clearCursorForward(),
+			"allow for editing",
+			left(8),
+			up(1),
+		),
+	},
+}
+
+var moveAcrossWrap = []drawTrial{
+	{
+		description:      "Move backwards before wrapped line",
+		currentValue:     "1234567890123456789012",
+		currentPosition:  21,
+		previousValue:    "1234567890123456789012",
+		previousPosition: 22,
+		expectedOutput: fmtLine(
+			left(1),
+		),
+	},
+	{
+		description:      "Move backwards over wrapped line",
+		currentValue:     "1234567890123456789012",
+		currentPosition:  20,
+		previousValue:    "1234567890123456789012",
+		previousPosition: 21,
+		expectedOutput: fmtLine(
+			left(1),
+		),
+	},
+	{
+		description:      "Move backwards after wrapped line",
+		currentValue:     "1234567890123456789012",
+		currentPosition:  19,
+		previousValue:    "1234567890123456789012",
+		previousPosition: 20,
+		expectedOutput: fmtLine(
+			right(19),
+			up(1),
+		),
+	},
+}
+
+var insertInMultiline = []drawTrial{
+	{
+		description: "Insert in last line in multi line phrase",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line of text that will allow for diting",
+		previousPosition: 51,
+		currentValue:     "a simple but long line of text that will allow for editing",
+		currentPosition:  52,
+		expectedOutput: fmtLine(
+			"editing",
+			left(6),
+		),
+	},
+	{
+		description: "Insert in middle line in multi line phrase",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line o text that will allow for editing",
+		previousPosition: 24,
+		currentValue:     "a simple but long line of text that will allow for editing",
+		currentPosition:  25,
+		expectedOutput: fmtLine(
+			"f text that will",
+
+			left(20),
+			down(1),
+			" allow for editing",
+
+			left(13),
+			up(1),
+		),
+	},
+	{
+		description: "Insert in first line in multi line phrase",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple ut long line of text that will allow for editing",
+		previousPosition: 9,
+		currentValue:     "a simple but long line of text that will allow for editing",
+		currentPosition:  10,
+		expectedOutput: fmtLine(
+			"but long li",
+
+			left(20),
+			down(1),
+			"ne of text that will",
+
+			left(20),
+			down(1),
+			" allow for editing",
+
+			left(8),
+			up(2),
+		),
+	},
+}
+
+var removeFromMultiline = []drawTrial{
+	{
+		description: "Remove character from end of multiple line wrap",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line of text that will allow for editing",
+		previousPosition: 48,
+		currentValue:     "a simple but long line of text that will allow or editing",
+		currentPosition:  47,
+		expectedOutput: fmtLine(
+			left(1),
+			clearCursorForward(),
+			"or editing",
+			left(10),
+		),
+	},
+	{
+		description: "Remove character from middle of multiple line wrap",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line of text that will allow for editing",
+		previousPosition: 27,
+		currentValue:     "a simple but long line of ext that will allow for editing",
+		currentPosition:  26,
+		expectedOutput: fmtLine(
+			left(1),
+			"ext that will ",
+
+			left(20),
+			down(1),
+			clearCursorForward(),
+			"allow for editing",
+			left(11),
+			up(1),
+		),
+	},
+	{
+		description: "Remove character from first word of multiple line wrap",
+		//                                    *                   *
+		//                 123456789012345678901234567890123456789012345678901234567890
+		previousValue:    "a simple but long line of text that will allow for editing",
+		previousPosition: 12,
+		currentValue:     "a simple bu long line of text that will allow for editing",
+		currentPosition:  11,
+		expectedOutput: fmtLine(
+			left(1),
+			" long lin",
+
+			left(20),
+			down(1),
+			"e of text that will ",
+
+			left(20),
+			down(1),
+			clearCursorForward(),
+			"allow for editing",
+
+			left(6),
+			up(2),
+		),
+	},
 }
