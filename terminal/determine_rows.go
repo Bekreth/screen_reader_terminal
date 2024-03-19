@@ -41,7 +41,7 @@ func (terminal Terminal) determineRows(
 
 		for j := 0; j < lineLength; j += width {
 			lineEnd := utils.IntMin(j+width, lineLength)
-			row := line[j:lineEnd]
+			row := strings.ReplaceAll(line[j:lineEnd], "\t", " ")
 			rows = append(rows, row)
 			if advancingCursor {
 				advanceCursorStep := utils.IntMin(len(row), cursor-cursorCounter)
