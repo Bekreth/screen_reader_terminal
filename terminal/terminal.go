@@ -56,13 +56,6 @@ func (terminal Terminal) Draw() {
 		currentCursor,
 	)
 
-	terminal.logger.Debugf(
-		"DETERMINES: previous %v: '%v' current %v: '%v'",
-		len(previousDataRow),
-		previousDataRow,
-		len(currentDataRow),
-		currentDataRow,
-	)
 	// Splicing together
 	zippedLines := utils.Zip(
 		previousDataRow,
@@ -72,21 +65,9 @@ func (terminal Terminal) Draw() {
 
 	// Calculating delta
 	//width := terminal.window.GetWindowSize().Width
-	terminal.logger.Debugf(
-		"PC '%v' PR '%v', CC '%v' CR '%v', ",
-		previousCursorOffset, previousCursorRow,
-		currentCursorOffset, currentCursorRow,
-	)
 	coords := newCoords(previousCursorOffset, previousCursorRow)
 	if previousData != currentData {
-		terminal.logger.Debugf(
-			"PR %v PC %v CR %v CC %v",
-			previousCursorRow, previousCursorOffset,
-			currentCursorRow, currentCursorOffset,
-		)
 		for i, dataPair := range zippedLines {
-			terminal.logger.Debugf("================= ROW # %v", 1)
-			terminal.logger.Debugf("PD '%v' CD '%v'", dataPair.First, dataPair.Second)
 			rowRequiresUpdate := dataPair.First != dataPair.Second
 			if rowRequiresUpdate {
 				coords = coords.setPendingRow(i)
@@ -98,23 +79,18 @@ func (terminal Terminal) Draw() {
 					terminal.window.ClearLine(window.FULL)
 					continue
 				}
-				terminal.logger.Debugf("LOCATION Before: %v", coords)
 				coords = terminal.drawRow(dataPair.First, dataPair.Second, coords)
-				terminal.logger.Debugf("LOCATION after: %v", coords)
 			}
 		}
 	}
 	coords = coords.setPendingColumn(currentCursorOffset).
 		setPendingRow(currentCursorRow)
 
-	terminal.logger.Debugf("TARGET LOC: %v", coords)
 	moveX, moveY := coords.outputDelataToTarget()
 	coords = coords.applyPendingDeltas()
 
 	terminal.window.MoveCursor(moveX, moveY)
 	terminal.buffer.UpdatePrevious()
-	terminal.logger.Debugf("")
-	terminal.logger.Debugf("")
 }
 
 func (terminal Terminal) NewLine() {
