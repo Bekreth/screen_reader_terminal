@@ -86,6 +86,6 @@ func (window unixWindow) ScrollPage(input int) {
 	if input > 0 {
 		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, input, "S")))
 	} else if input < 0 {
-		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, input, "T")))
+		window.file.Write([]byte(fmt.Sprintf("%v%v%v", CSI, -1*input, "T")))
 	}
 }

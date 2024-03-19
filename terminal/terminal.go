@@ -8,10 +8,11 @@ import (
 )
 
 type Terminal struct {
-	window  window.Window
-	buffer  *buffer.Buffer
-	history *history.History
-	logger  utils.Logger
+	cursorHeight int
+	window       window.Window
+	buffer       *buffer.Buffer
+	history      *history.History
+	logger       utils.Logger
 }
 
 func NewTerminal(
@@ -23,10 +24,11 @@ func NewTerminal(
 	win.ClearWindow(window.FULL)
 	win.SetCursorPosition(0, 0)
 	return Terminal{
-		window:  win,
-		buffer:  buf,
-		history: &history,
-		logger:  logger,
+		cursorHeight: 0,
+		window:       win,
+		buffer:       buf,
+		history:      &history,
+		logger:       logger,
 	}
 }
 
@@ -41,7 +43,7 @@ func (terminal Terminal) CurrentBuffer() *buffer.Buffer {
 
 const emptyString = "[~empty~]"
 
-func (terminal Terminal) Draw() {
+func (terminal *Terminal) Draw() {
 	// Breaking up data from previous render
 	previousData, previousCursor := terminal.buffer.PreviousOutput()
 	previousDataRow, previousCursorRow, previousCursorOffset := terminal.determineRows(
@@ -62,6 +64,8 @@ func (terminal Terminal) Draw() {
 		currentDataRow,
 		func() string { return emptyString },
 	)
+
+	terminal.scrollWindow(len(previousDataRow), len(currentDataRow))
 
 	// Calculating delta
 	//width := terminal.window.GetWindowSize().Width
@@ -93,7 +97,8 @@ func (terminal Terminal) Draw() {
 	terminal.buffer.UpdatePrevious()
 }
 
-func (terminal Terminal) NewLine() {
+func (terminal *Terminal) NewLine() {
+	terminal.cursorHeight += 1
 	terminal.window.Write([]byte("\n"))
 	terminal.history.AddBuffer(*terminal.buffer)
 	terminal.buffer.Clear()

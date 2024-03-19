@@ -31,6 +31,14 @@ func fmtLine(input ...any) string {
 	return fmt.Sprintf(format, input...)
 }
 
+func scrollup(input int) string {
+	return fmtLine(window.CSI, input, "S")
+}
+
+func scrolldown(input int) string {
+	return fmtLine(window.CSI, input, "T")
+}
+
 func column(input int) string {
 	return fmtLine(window.CSI, input, "G")
 }
