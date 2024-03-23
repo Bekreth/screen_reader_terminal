@@ -1,6 +1,8 @@
 package buffer
 
-import "github.com/bekreth/screen_reader_terminal/utils"
+import (
+	"github.com/bekreth/screen_reader_terminal/utils"
+)
 
 type BufferValues struct {
 	Prefix   string
@@ -90,10 +92,17 @@ func (buffer *Buffer) AdvanceCursor(amount int) {
 
 // Move the cursor forward by a word count, delineated by white space
 func (buffer *Buffer) AdvanceCursorByWord(wordCount int) {
-	indicies := append(utils.IndiciesOfChar(buffer.currentValue, ' '), len(buffer.currentValue))
+	indicies := append(
+		utils.IndiciesOfChar(buffer.currentValue, ' '),
+		len(buffer.currentValue)-1,
+	)
 	for _, i := range indicies {
 		if i > buffer.currentPosition {
-			buffer.currentPosition = i
+			if i == len(buffer.currentValue) {
+				buffer.currentPosition = i
+			} else {
+				buffer.currentPosition = i + 1
+			}
 			return
 		}
 	}
@@ -108,13 +117,26 @@ func (buffer *Buffer) RetreatCursor(amount int) {
 // Move the cursor backwards by a word count, delineated by white space
 func (buffer *Buffer) RetreatCursorByWord(wordCount int) {
 	indicies := utils.IndiciesOfChar(buffer.currentValue, ' ')
-	possibleIndex := 0
-	for _, i := range indicies {
-		if i > possibleIndex && i < buffer.currentPosition {
-			possibleIndex = i
+	reversedIndicies := make([]int, len(indicies))
+	for i, value := range indicies {
+		j := len(indicies) - i - 1
+		reversedIndicies[j] = value
+	}
+	reversedIndicies = append(reversedIndicies, 0)
+	for _, r := range reversedIndicies {
+		if r+1 < buffer.currentPosition {
+			if r == 0 {
+				buffer.currentPosition = r
+			} else {
+				buffer.currentPosition = r + 1
+			}
+			return
 		}
 	}
-	buffer.currentPosition = possibleIndex
+}
+
+func (buffer Buffer) OutputWithoutPrefix() (string, int) {
+	return buffer.currentValue, buffer.currentPosition
 }
 
 func (buffer Buffer) Output() (string, int) {
@@ -143,12 +165,15 @@ func (buffer *Buffer) NewLineCount() int {
 	return count
 }
 
-func (buffer *Buffer) Clear() {
-	buffer.currentValue = ""
-	buffer.currentPosition = 0
-
+func (buffer *Buffer) ClearPrevious() {
 	buffer.previousValue = ""
 	buffer.previousPosition = 0
 
 	buffer.previousPrefix = ""
+}
+
+func (buffer *Buffer) Clear() {
+	buffer.currentValue = ""
+	buffer.currentPosition = 0
+	buffer.ClearPrevious()
 }

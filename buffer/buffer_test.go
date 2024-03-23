@@ -160,7 +160,7 @@ func TestAdvanceCursorByWord(t *testing.T) {
 			},
 			expectedOutput: Buffer{
 				currentValue:    "Hello world, this is a test",
-				currentPosition: 12,
+				currentPosition: 13,
 			},
 		},
 	}
@@ -221,7 +221,7 @@ func TestRetreatCursorByWord(t *testing.T) {
 			},
 			expectedOutput: Buffer{
 				currentValue:    "Hello world, this is a test",
-				currentPosition: 5,
+				currentPosition: 6,
 			},
 		},
 	}

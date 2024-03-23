@@ -37,11 +37,22 @@ func (terminal *Terminal) AddBuffer(buffer *buffer.Buffer) {
 	terminal.buffer = buffer
 }
 
+func (terminal Terminal) PreviousBuffer() buffer.Buffer {
+	return terminal.history.GetPrevious()
+}
+
 func (terminal Terminal) CurrentBuffer() *buffer.Buffer {
 	return terminal.buffer
 }
 
 const emptyString = "[~empty~]"
+
+func (terminal *Terminal) RedrawBuffer() {
+	terminal.cursorHeight += 1
+	terminal.window.Write([]byte("\n"))
+	terminal.buffer.ClearPrevious()
+	terminal.Draw()
+}
 
 func (terminal *Terminal) Draw() {
 	// Breaking up data from previous render
@@ -68,7 +79,6 @@ func (terminal *Terminal) Draw() {
 	terminal.scrollWindow(len(previousDataRow), len(currentDataRow))
 
 	// Calculating delta
-	//width := terminal.window.GetWindowSize().Width
 	coords := newCoords(previousCursorOffset, previousCursorRow)
 	if previousData != currentData {
 		for i, dataPair := range zippedLines {

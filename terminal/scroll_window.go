@@ -12,7 +12,6 @@ func (terminal *Terminal) scrollWindow(previousRowCount int, currentRowCount int
 
 	projectedMaxRow := rowCountDelta + terminal.cursorHeight
 	height := terminal.window.GetWindowSize().Height
-	terminal.logger.Debugf("PROJ %v, HEGIHT: %v, CH: %v", projectedMaxRow, height, terminal.cursorHeight)
 	if projectedMaxRow >= height {
 		fitDelta := projectedMaxRow - height + 1
 		terminal.window.ScrollPage(fitDelta)
