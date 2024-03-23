@@ -47,11 +47,29 @@ func (terminal Terminal) CurrentBuffer() *buffer.Buffer {
 
 const emptyString = "[~empty~]"
 
+func (terminal *Terminal) LoadPreviousBuffer() {
+	previousBuffer := terminal.history.GetPrevious()
+	previousString, previousIndex := previousBuffer.OutputWithoutPrefix()
+
+	terminal.CurrentBuffer().
+		SetString(previousString).
+		SetCursor(previousIndex).
+		SetPrefix(previousBuffer.GetPrefix())
+}
+
 func (terminal *Terminal) RedrawBuffer() {
-	terminal.cursorHeight += 1
-	terminal.window.Write([]byte("\n"))
-	terminal.buffer.ClearPrevious()
-	terminal.Draw()
+	if terminal.CurrentBuffer().IsEmpty() {
+		terminal.LoadPreviousBuffer()
+		terminal.Draw()
+		terminal.CurrentBuffer().Clear()
+		terminal.cursorHeight += 1
+		terminal.window.Write([]byte("\n"))
+	} else {
+		terminal.cursorHeight += 1
+		terminal.window.Write([]byte("\n"))
+		terminal.buffer.ClearPrevious()
+		terminal.Draw()
+	}
 }
 
 func (terminal *Terminal) Draw() {

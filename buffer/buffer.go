@@ -33,6 +33,14 @@ func NewBufferWithString(input string) Buffer {
 	}
 }
 
+func (buffer Buffer) IsEmpty() bool {
+	return buffer.currentPosition == 0 && buffer.currentValue == ""
+}
+
+func (buffer *Buffer) GetPrefix() string {
+	return buffer.prefix
+}
+
 func (buffer *Buffer) SetPrefix(input string) *Buffer {
 	buffer.prefix = input
 	return buffer
@@ -82,6 +90,11 @@ func (buffer *Buffer) RemoveCharacter() {
 		buffer.currentValue = buffer.currentValue[0:buffer.currentPosition] +
 			buffer.currentValue[buffer.currentPosition+1:]
 	}
+}
+
+func (buffer *Buffer) SetCursor(position int) *Buffer {
+	buffer.currentPosition = position
+	return buffer
 }
 
 func (buffer *Buffer) AdvanceCursor(amount int) {

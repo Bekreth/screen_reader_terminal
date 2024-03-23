@@ -2,19 +2,6 @@ package window
 
 import "io"
 
-type LineClear int
-
-const (
-	CURSOR_FORWARD   LineClear = 0
-	CURSOR_BACKWARDS LineClear = 1
-	FULL             LineClear = 2
-)
-
-type WindowSize struct {
-	Width  int
-	Height int
-}
-
 type Window interface {
 	SetWriter(writer io.Writer) Window
 	SetWindowSize(size WindowSize) Window
@@ -34,4 +21,17 @@ type Window interface {
 	ScrollPage(int)
 
 	Write([]byte) (int, error)
+}
+
+type LineClear int
+
+const (
+	CURSOR_FORWARD   LineClear = 0
+	CURSOR_BACKWARDS LineClear = 1
+	FULL             LineClear = 2
+)
+
+type WindowSize struct {
+	Width  int
+	Height int
 }
